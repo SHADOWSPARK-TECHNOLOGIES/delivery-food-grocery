@@ -1,0 +1,31 @@
+# dependencies
+node_modules/
+
+# next.js build output
+.next/
+out/
+
+# production build artifacts
+dist/
+
+# misc
+.DS_Store
+*.log
+
+# env files — keep .env.example
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+# typescript cache
+*.tsbuildinfo
+
+# prisma generated client (regenerated on demand)
+src/generated/
+
+# editor
+.vscode/
+.idea/
