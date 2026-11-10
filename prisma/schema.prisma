@@ -1,0 +1,167 @@
+// ShadowSpark Cyberfood — food & grocery delivery data model.
+// PostgreSQL (Neon-compatible). `DATABASE_URL` is required only to run
+// generate/migrate/seed; the Next.js build never connects to a database.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Restaurant {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  tagline         String?
+  city            String
+  rating          Float    @default(0)
+  reviewCount     Int      @default(0)
+  deliveryTimeMin Int      @default(30)
+  minOrderNgn     Int      @default(0)
+  deliveryFeeNgn  Int      @default(0)
+  featured        Boolean  @default(false)
+
+  categories Category[]
+  menuItems  MenuItem[]
+  orders     Order[]
+
+  @@index([city])
+}
+
+model Category {
+  id           String     @id @default(cuid())
+  name         String
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items        MenuItem[]
+
+  @@index([restaurantId])
+}
+
+model MenuItem {
+  id           String      @id
+  name         String
+  description  String?
+  priceNgn     Int
+  dietTags     DietTag[]
+  popular      Boolean     @default(false)
+  restaurantId String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  categoryId   String
+  category     Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems   OrderItem[]
+
+  @@index([restaurantId])
+  @@index([categoryId])
+}
+
+enum DietTag {
+  halal
+  vegetarian
+  gluten_free
+}
+
+model Customer {
+  id        String    @id
+  name      String
+  phone     String
+  email     String
+  city      String
+  zone      String
+  orders    Order[]
+  addresses Address[]
+  payments  Payment[]
+}
+
+model Order {
+  id           String      @id
+  ref          String      @unique
+  customerId   String
+  customer     Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  restaurantId String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  status       OrderStatus
+  etaMin       Int         @default(30)
+  driverName   String?
+  deliveryTime String
+  subtotalNgn  Int
+  deliveryFee  Int
+  discountNgn  Int
+  totalNgn     Int
+  pickup       String
+  dropoff      String
+  placedAt     DateTime    @default(now())
+  items        OrderItem[]
+  payments     Payment[]
+
+  @@index([customerId])
+  @@index([restaurantId])
+}
+
+enum OrderStatus {
+  placed
+  confirmed
+  preparing
+  en_route
+  delivered
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  qty        Int
+  priceNgn   Int
+
+  @@index([orderId])
+}
+
+model DeliveryZone {
+  id          String @id
+  name        String
+  city        String
+  description String
+}
+
+model Driver {
+  id      String @id
+  name    String
+  phone   String
+  vehicle String
+  rating  Float  @default(0)
+  zone    String
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  label      String
+  line1      String
+  city       String
+  zone       String
+  landmark   String?
+
+  @@index([customerId])
+}
+
+model Payment {
+  id         String    @id @default(cuid())
+  reference  String    @unique
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id])
+  orderId    String?
+  order      Order?    @relation(fields: [orderId], references: [id])
+  amountNgn  Int
+  status     String    @default("pending")
+  method     String
+  createdAt  DateTime  @default(now())
+
+  @@index([customerId])
+  @@index([orderId])
+}
